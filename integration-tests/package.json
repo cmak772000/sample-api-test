@@ -1,0 +1,20 @@
+{
+  "name": "integration-tests",
+  "version": "1.0.0",
+  "description": "",
+  "main": "users.test.js",
+  "scripts": {
+    "test": "jest --testResultsProcessor `pwd`/node_modules/jest-sonar-reporter/index.js",
+    "test:watch": "jest --watch"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "bufferutil": "^4.0.1",
+    "canvas": "^2.6.1",
+    "jest": "^26.2.2",
+    "jest-sonar-reporter": "^2.0.0",
+    "supertest": "^4.0.2",
+    "utf-8-validate": "^5.0.2"
+  }
+}

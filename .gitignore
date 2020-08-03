@@ -1,0 +1,5 @@
+node_modules
+test-report.xml
+integration-tests/node_modules
+integration0tests/text-report.xml
+coverage

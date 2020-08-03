@@ -1,0 +1,274 @@
+{
+	"metadata": {
+		"version": 2
+	},
+	"application": {
+		"name": "sample-api-testing",
+		"language": "NODEJS",
+		"artifact_store": {
+			"type": "",
+			"repositories": null
+		}
+	},
+	"pipeline": {
+		"segments": [
+			{
+				"name": "Build",
+				"segment_type": "build",
+				"exit_actions": {},
+				"properties": [
+					{
+						"name": "npm.cache",
+						"description": "npm cache path is set to ${SEGMENT_BASE_DIR}/cache/.npm by default, when caching is enabled. Caches are maintained on the worker where your build gets allocated. For a new worker assigned to the build, the cache will be re-created",
+						"value": "${SEGMENT_BASE_DIR}/cache/.npm"
+					}
+				],
+				"deployment_strategy": {},
+				"application_init": {
+					"command": "",
+					"arguments": null
+				},
+				"packages": [
+					{
+						"name": "((application.name))",
+						"dependencies": [],
+						"downloads": [],
+						"files": [
+							"*"
+						],
+						"package_install_command": "",
+						"installed_path": ""
+					},
+					{
+						"name": "nodejs",
+						"dependencies": [],
+						"downloads": [
+							{
+								"link": "https://nodejs.org/download/release/v((nodejs.version))/node-v((nodejs.version))-linux-x64.tar.xz",
+								"name": "nodejs.tar.xz"
+							}
+						],
+						"files": [],
+						"package_install_command": "echo \"installing nodejs from archive\"\nset -ex\ntar xf nodejs/nodejs.tar.xz\ncp -R node-v((nodejs.version))-linux-x64/* ${BOSH_INSTALL_TARGET}\necho \"finished installing nodejs from archive\"",
+						"installed_path": ""
+					}
+				],
+				"instance_tags": [
+					{
+						"name": "application.name",
+						"value": "((application.name))"
+					}
+				],
+				"post_deployment_actions": {
+					"instances": null,
+					"loadbalanced": false,
+					"loadbalancer": {
+						"TargetGroupName": "",
+						"TargetGroupPort": 0,
+						"TargetGroupProtocol": "",
+						"TargetType": "",
+						"VPCID": "",
+						"HealthCheckEnabled": false,
+						"HealthCheckPort": "",
+						"UnhealthyThresholdCount": 0
+					}
+				},
+				"cache_info": {
+					"paths": [
+						"((npm.cache))"
+					]
+				},
+				"tasks": [
+					{
+						"name": "sample-api-testing",
+						"steps": [
+							{
+								"name": "Dependencies",
+								"definition": "Dependencies",
+								"command": "npm install\n\npushd integration-tests\nnpm install\n",
+								"properties": null
+							},
+							{
+								"name": "Test",
+								"definition": "Test",
+								"command": "npm test\n\ncp ./test-report.xml  ./test.xml\ncp ./coverage/cobertura-coverage.xml ./coverage.xml",
+								"properties": null
+							}
+						],
+						"docker_options": {}
+					}
+				]
+			},
+			{
+				"name": "Integration",
+				"segment_type": "integration",
+				"run_after": [
+					"Build"
+				],
+				"job_steps": [
+					{
+						"name": "Test",
+						"definition": "Test",
+						"command": "export PATH=${PKG_BASE_DIR}/nodejs/bin:${PATH}\nnode -v\n\npushd ${APPLICATION_JOB_DIR}/integration-tests\n\nnpm test\n\ncp ./test-report.xml  ${TEST_LOGS_DIR}/test.xml\n",
+						"properties": null
+					}
+				],
+				"exit_actions": {},
+				"deployment_strategy": {
+					"canaries": 1,
+					"max_in_flight": 1,
+					"canary_watch_time": "60000-120000",
+					"update_watch_time": "60000-120000",
+					"serial": false
+				},
+				"application_init": {
+					"command": "",
+					"arguments": null
+				},
+				"process": {
+					"init": {
+						"command": ""
+					}
+				},
+				"package_dependencies": [
+					"((application.name))",
+					"nodejs"
+				],
+				"instance_tags": [
+					{
+						"name": "application.name",
+						"value": "((application.name))"
+					}
+				],
+				"instance_groups": [
+					{
+						"name": "((application.name))",
+						"number_of_instances": 1,
+						"persistent_disk_type": "",
+						"cloud_provider_name": "guide-rails-aws-us-west-2",
+						"vm_type": "default",
+						"os_type": "default",
+						"networks": [
+							"integration"
+						],
+						"availability_zones": null,
+						"deployment_strategy": {
+							"canaries": 1,
+							"max_in_flight": 1,
+							"canary_watch_time": "60000-120000",
+							"update_watch_time": "60000-120000",
+							"serial": false
+						},
+						"dependencies": [
+							{
+								"name": "consul",
+								"release": "consul",
+								"provides": [
+									{
+										"name": "consul_servers.as",
+										"value": "consul_1"
+									}
+								],
+								"consumes": [
+									{
+										"name": "consul_servers.from",
+										"value": "consul_1"
+									}
+								],
+								"properties": [
+									{
+										"name": "consul.servicename",
+										"value": "((application.name))-INT-((application.branch))-((application.shortsha))"
+									},
+									{
+										"name": "consul.environment",
+										"value": "((consul.environment))"
+									},
+									{
+										"name": "consul.datacenter",
+										"value": "((consul.datacenter))"
+									},
+									{
+										"name": "consul.server",
+										"value": "false"
+									},
+									{
+										"name": "consul.joinservers",
+										"value": "((consul.joinservers))"
+									},
+									{
+										"name": "calculi.intermediate.cert",
+										"value": "grsecret:tls.cert"
+									},
+									{
+										"name": "calculi.intermediate.key",
+										"value": "grsecret:tls.key"
+									}
+								]
+							}
+						]
+					}
+				],
+				"post_deployment_actions": {
+					"instances": null,
+					"loadbalanced": false,
+					"loadbalancer": {
+						"TargetGroupName": "",
+						"TargetGroupPort": 0,
+						"TargetGroupProtocol": "",
+						"TargetType": "",
+						"VPCID": "",
+						"HealthCheckEnabled": false,
+						"HealthCheckPort": "",
+						"UnhealthyThresholdCount": 0
+					}
+				}
+			}
+		],
+		"exit_actions": {
+			"default": {
+				"code_analysis": {
+					"publish": true,
+					"properties": null
+				}
+			}
+		},
+		"default_properties": [
+			{
+				"name": "nodejs.version",
+				"value": "10.16.0",
+				"type": "string"
+			}
+		],
+		"deployment_files": [
+			{
+				"source_path": "ci/bin/startapp.sh",
+				"target_path": "bin/startapp.sh"
+			}
+		],
+		"application_init": {
+			"command": "",
+			"arguments": null
+		},
+		"process": {
+			"init": {
+				"command": "bin/startapp.sh"
+			},
+			"pid": {
+				"command": [
+					"cp /home/vcap/.pm2/pm2.pid ${APPLICATION_PID_FILE}"
+				]
+			},
+			"name": ""
+		},
+		"releases": [
+			{
+				"name": "consul",
+				"version": "latest"
+			}
+		]
+	},
+	"organization": {
+		"orgname": "PMI"
+	}
+}
